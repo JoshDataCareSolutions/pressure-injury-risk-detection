@@ -1,0 +1,91 @@
+{
+  "num_features": [
+    "age",
+    "los_days",
+    "hemoglobin",
+    "creatinine",
+    "white_blood_cells",
+    "platelet_count"
+  ],
+  "cat_features": [
+    "gender",
+    "race",
+    "insurance"
+  ],
+  "passthru_features": [
+    "albumin",
+    "braden_sensory_perception",
+    "braden_moisture",
+    "braden_activity",
+    "braden_mobility",
+    "braden_nutrition",
+    "braden_friction_shear",
+    "braden_total"
+  ],
+  "binary_features": [
+    "icu_flag",
+    "age_over_75",
+    "los_over_7",
+    "los_over_14",
+    "albumin_low",
+    "hemoglobin_low",
+    "albumin_missing",
+    "hemoglobin_missing",
+    "creatinine_missing",
+    "white_blood_cells_missing",
+    "platelet_count_missing",
+    "braden_sensory_perception_missing",
+    "braden_moisture_missing",
+    "braden_activity_missing",
+    "braden_mobility_missing",
+    "braden_nutrition_missing",
+    "braden_friction_shear_missing",
+    "braden_total_missing"
+  ],
+  "scaler_mean": [
+    56.8943139310749,
+    4.767025034733193,
+    10.47316185997958,
+    1.0101972885981017,
+    7.067517753226712,
+    203.45720797029455
+  ],
+  "scaler_scale": [
+    18.96698805012494,
+    7.23311611604153,
+    2.010840476151187,
+    0.97535462254728,
+    4.533812907710546,
+    87.15747468677554
+  ],
+  "imputer_fill": [
+    58.0,
+    2.814583333333333,
+    10.5,
+    0.8,
+    6.6,
+    196.0
+  ],
+  "ohe_categories": [
+    [
+      "F",
+      "M"
+    ],
+    [
+      "BLACK/AFRICAN AMERICAN",
+      "OTHER",
+      "Other",
+      "UNKNOWN",
+      "WHITE",
+      "WHITE - OTHER EUROPEAN"
+    ],
+    [
+      "Medicaid",
+      "Medicare",
+      "No charge",
+      "Other",
+      "Private",
+      null
+    ]
+  ]
+}
