@@ -17,6 +17,7 @@ st.subheader("Load Data")
 data_source = st.radio("Data source:", [
     "MIMIC-IV (processed dataset)",
     "Upload CSV file",
+    "Load from URL",
 ], horizontal=True)
 
 df = None
@@ -27,11 +28,29 @@ if data_source == "MIMIC-IV (processed dataset)":
         st.success(f"Loaded analytic dataset: {df.shape[0]:,} rows, {df.shape[1]} columns")
     else:
         st.warning("Processed dataset not found. Run the pipeline first on the Pipeline page.")
-else:
+elif data_source == "Upload CSV file":
     uploaded = st.file_uploader("Upload a CSV file:", type=["csv"])
     if uploaded:
         df = pd.read_csv(uploaded)
         st.success(f"Uploaded: {df.shape[0]:,} rows, {df.shape[1]} columns")
+else:
+    url = st.text_input(
+        "Dataset URL (CSV or Parquet):",
+        placeholder="https://example.com/data.csv",
+    )
+    if url and st.button("Fetch from URL"):
+        try:
+            if url.lower().endswith(".parquet"):
+                df = pd.read_parquet(url)
+            else:
+                df = pd.read_csv(url)
+            st.session_state["url_df"] = df
+            st.success(f"Loaded from URL: {df.shape[0]:,} rows, {df.shape[1]} columns")
+        except Exception as e:
+            st.error(f"Failed to load from URL: {e}")
+    elif "url_df" in st.session_state:
+        df = st.session_state["url_df"]
+        st.info(f"Using previously fetched URL data: {df.shape[0]:,} rows, {df.shape[1]} columns")
 
 if df is None:
     st.stop()
@@ -80,8 +99,92 @@ elif display_format == "Head/Tail":
 
 st.markdown("---")
 
-# --- Data Cleaning & Preprocessing ---
-st.subheader("Data Cleaning & Preprocessing")
+# --- Interactive Preprocessing ---
+st.subheader("Apply Preprocessing Methods")
+st.caption("Select one or more methods to apply to the loaded data. A cleaned copy is "
+           "shown below; the source data is not modified.")
+
+method_options = [
+    "Drop rows with any missing values",
+    "Median imputation (numeric columns)",
+    "Mean imputation (numeric columns)",
+    "Mode imputation (categorical columns)",
+    "Clip numeric columns to clinical ranges",
+    "Min-max scaling (numeric columns)",
+    "Z-score standardization (numeric columns)",
+    "One-hot encode categorical columns",
+    "Drop duplicate rows",
+]
+selected_methods = st.multiselect("Preprocessing methods:", method_options)
+
+if selected_methods:
+    cleaned = df.copy()
+    numeric_cols = cleaned.select_dtypes(include=[np.number]).columns.tolist()
+    cat_cols = cleaned.select_dtypes(include=["object", "category"]).columns.tolist()
+    log = []
+
+    for method in selected_methods:
+        if method == "Drop rows with any missing values":
+            before = len(cleaned)
+            cleaned = cleaned.dropna()
+            log.append(f"Dropped {before - len(cleaned):,} rows with missing values.")
+        elif method == "Median imputation (numeric columns)":
+            for c in numeric_cols:
+                cleaned[c] = cleaned[c].fillna(cleaned[c].median())
+            log.append(f"Median-imputed {len(numeric_cols)} numeric columns.")
+        elif method == "Mean imputation (numeric columns)":
+            for c in numeric_cols:
+                cleaned[c] = cleaned[c].fillna(cleaned[c].mean())
+            log.append(f"Mean-imputed {len(numeric_cols)} numeric columns.")
+        elif method == "Mode imputation (categorical columns)":
+            for c in cat_cols:
+                mode = cleaned[c].mode()
+                if not mode.empty:
+                    cleaned[c] = cleaned[c].fillna(mode.iloc[0])
+            log.append(f"Mode-imputed {len(cat_cols)} categorical columns.")
+        elif method == "Clip numeric columns to clinical ranges":
+            clipped = 0
+            for col, (lo, hi) in config.CLINICAL_RANGES.items():
+                if col in cleaned.columns:
+                    cleaned[col] = cleaned[col].clip(lower=lo, upper=hi)
+                    clipped += 1
+            log.append(f"Clipped {clipped} columns to clinical ranges.")
+        elif method == "Min-max scaling (numeric columns)":
+            for c in numeric_cols:
+                col_min, col_max = cleaned[c].min(), cleaned[c].max()
+                if pd.notna(col_min) and pd.notna(col_max) and col_max > col_min:
+                    cleaned[c] = (cleaned[c] - col_min) / (col_max - col_min)
+            log.append(f"Min-max scaled {len(numeric_cols)} numeric columns.")
+        elif method == "Z-score standardization (numeric columns)":
+            for c in numeric_cols:
+                mu, sd = cleaned[c].mean(), cleaned[c].std()
+                if pd.notna(sd) and sd > 0:
+                    cleaned[c] = (cleaned[c] - mu) / sd
+            log.append(f"Z-score standardized {len(numeric_cols)} numeric columns.")
+        elif method == "One-hot encode categorical columns":
+            before_cols = cleaned.shape[1]
+            cleaned = pd.get_dummies(cleaned, columns=cat_cols, drop_first=False)
+            log.append(f"One-hot encoded {len(cat_cols)} columns "
+                       f"(shape change: {before_cols} -> {cleaned.shape[1]} columns).")
+        elif method == "Drop duplicate rows":
+            before = len(cleaned)
+            cleaned = cleaned.drop_duplicates()
+            log.append(f"Dropped {before - len(cleaned):,} duplicate rows.")
+
+    st.markdown("**Preprocessing log:**")
+    for entry in log:
+        st.write(f"- {entry}")
+    st.markdown(f"**Resulting shape:** {cleaned.shape[0]:,} rows × {cleaned.shape[1]} columns")
+    st.dataframe(cleaned.head(20), use_container_width=True)
+
+    csv = cleaned.to_csv(index=False)
+    st.download_button("Download Cleaned Dataset (CSV)", csv,
+                       "cleaned_dataset.csv", "text/csv")
+
+st.markdown("---")
+
+# --- Preprocessing Reference Documentation ---
+st.subheader("Pipeline Preprocessing Reference")
 
 with st.expander("Clinical Range Validation"):
     st.markdown("Values outside clinically plausible ranges are set to NaN:")

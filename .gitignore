@@ -21,3 +21,4 @@ Thumbs.db
 !.gitignore
 !.python-version
 precompute.py
+docs/*
