@@ -1,0 +1,30 @@
+======================================================================
+PRESSURE INJURY RISK DETECTION — VALIDATION TEST RESULTS
+Generated: 2026-04-29 15:28:03
+Summary: 12/12 tests passed
+======================================================================
+
+[PASS] Data loads from analytic Parquet file
+        546,028 rows × 21 cols
+[PASS] Data loads from URL
+        loaded 150 rows from https://raw.githubusercontent.com/mwaskom/seaborn-data/master/iris.csv
+[PASS] Preprocessing — clinical range clipping
+        out-of-range values clamped
+[PASS] Preprocessing — median, mean, mode imputation
+        all three imputation strategies functional
+[PASS] Preprocessing — one-hot encoding
+        encoded shape (3, 3)
+[PASS] Model artifact loads
+        46 features registered
+[PASS] Model produces a probability for a synthetic input
+        probability=0.7987
+[PASS] Saved metrics meet AUROC and sensitivity targets
+        AUROC=0.842, sens=0.800
+[PASS] SHAP explanation runs on a single prediction
+        SHAP values computed without error
+[PASS] Report text generation produces non-empty output
+        107 characters
+[PASS] Report saves to a file
+        round-trip file write/delete
+[PASS] Risk thresholds map probabilities to categories
+        low/moderate/high categories correct

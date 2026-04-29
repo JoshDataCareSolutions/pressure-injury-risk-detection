@@ -37,6 +37,7 @@ with col2:
     7. **Data Management** — Load, display, clean, and export data
     8. **Reports** — Generate downloadable analysis reports
     9. **References** — Data sources, citations, and acknowledgments
+    10. **Tests** — Run the validation suite and view pass/fail outcomes
     """)
 
 st.markdown("---")

@@ -4,6 +4,27 @@ import streamlit as st
 
 st.title("User Guide")
 
+st.subheader("How to Use This Application")
+st.markdown("""
+Use the sidebar on the left to navigate between pages. Each page is described below.
+
+| Page | Purpose | Key Controls |
+|---|---|---|
+| **Home** | Overview and navigation index | Sidebar links |
+| **Data Overview** | High-level dataset stats and class distribution | Static charts |
+| **EDA** | Feature distributions, correlations, fairness, and on-demand analysis methods | Feature dropdown, demographic-group dropdown, analysis-method multiselect |
+| **Model Performance** | AUROC, sensitivity, specificity, ROC/PR curves, calibration, SHAP summary | Read-only metrics; downloadable charts via Plotly toolbar |
+| **Risk Assessment** | Enter a single patient's data and receive a probability + SHAP explanation | Numeric inputs, sliders, "Predict Risk" button |
+| **User Guide** *(this page)* | Help and how-to instructions | Reference content |
+| **Pipeline** | Visualize OSEMN phases and run them step-by-step or end-to-end | Radio mode selector, "Run" buttons |
+| **Data Management** | Load data from file/URL, choose preprocessing methods, export | Radio source, multiselect for cleaning methods |
+| **Reports** | Generate and download text reports | Report-type dropdown, "Generate" + "Download" buttons |
+| **Tests** | Run the validation test suite and view pass/fail outcomes | "Run Tests" button |
+| **References** | Citations and technology stack | Read-only |
+""")
+
+st.markdown("---")
+
 st.subheader("What Are Pressure Injuries?")
 st.markdown("""
 Pressure injuries (also called pressure ulcers or bedsores) are localized damage
@@ -103,6 +124,39 @@ st.warning("""
   medications, surgical procedures, or skin condition assessments).
 - This tool uses de-identified research data and complies with the MIMIC-IV
   Data Use Agreement.
+""")
+
+st.markdown("---")
+
+st.subheader("Security and Privacy")
+st.markdown("""
+**Data anonymization.** This application uses only the publicly released MIMIC-IV
+v3.1 dataset, which has been de-identified per HIPAA Safe Harbor before release by
+the MIT Laboratory for Computational Physiology. No protected health information
+(PHI) is processed by this prototype.
+
+**Data access.** Access to the underlying MIMIC-IV files requires PhysioNet
+credentialing, completion of CITI human-subjects training, and a signed Data Use
+Agreement. The repository excludes raw data via .gitignore.
+
+**Transport security.** When deployed to Streamlit Community Cloud, all traffic
+is served over HTTPS.
+
+**Authorized access.** For a production deployment, role-based access control via
+enterprise single sign-on would separate clinicians, informatics staff, and
+administrators. Federated identity (e.g., SAML/OIDC) is the recommended pattern
+for multi-institution deployment.
+
+**Backup and recovery.** Trained model artifacts and the analytic dataset are
+versioned in Git/Git LFS and re-buildable from the OSEMN pipeline.
+
+**Incident response.** If a security event is detected, the response is to
+rotate credentials, take the application offline, audit logs, notify affected
+users, and publish a postmortem before redeployment (NIST SP 800-61 Rev. 2).
+
+**Ethical use.** This is a research prototype and must not be used to make
+clinical decisions. Outputs should support, not replace, professional nursing
+judgment.
 """)
 
 st.caption(

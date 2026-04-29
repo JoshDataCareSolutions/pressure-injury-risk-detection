@@ -2,6 +2,8 @@
 
 import streamlit as st
 import pandas as pd
+import numpy as np
+import plotly.express as px
 import plotly.io as pio
 import sys
 from pathlib import Path
@@ -88,3 +90,83 @@ group = st.selectbox("Group by:", groups)
 fig = load_plot(f"plot_prev_{group}.json")
 if fig:
     st.plotly_chart(fig, use_container_width=True)
+
+st.markdown("---")
+
+# --- Choose Analysis Method ---
+st.subheader("Choose Analysis Method")
+st.caption("Select one or more on-demand analyses to run against the live dataset.")
+
+analysis_methods = st.multiselect(
+    "Analysis methods:",
+    [
+        "Descriptive Statistics",
+        "Pearson Correlation Matrix",
+        "Group Comparison by Outcome (t-test summary)",
+        "Outlier Detection (IQR method)",
+        "Missingness Profile",
+        "Class Prevalence Summary",
+    ],
+)
+
+if analysis_methods and has_live:
+    df_live = pd.read_parquet(config.ANALYTIC_DATASET)
+
+    if "Descriptive Statistics" in analysis_methods:
+        st.markdown("**Descriptive Statistics**")
+        st.dataframe(df_live.describe().T, use_container_width=True)
+
+    if "Pearson Correlation Matrix" in analysis_methods:
+        st.markdown("**Pearson Correlation (numeric features only)**")
+        num_df = df_live.select_dtypes(include=[np.number])
+        corr = num_df.corr(method="pearson")
+        st.plotly_chart(
+            px.imshow(corr, color_continuous_scale="RdBu_r", aspect="auto",
+                      title="Pearson Correlation"),
+            use_container_width=True,
+        )
+
+    if "Group Comparison by Outcome (t-test summary)" in analysis_methods:
+        st.markdown("**Mean comparison: PI vs no-PI cohorts**")
+        if config.TARGET in df_live.columns:
+            num_cols = df_live.select_dtypes(include=[np.number]).columns
+            num_cols = [c for c in num_cols if c != config.TARGET]
+            rows = []
+            for c in num_cols:
+                grp = df_live.groupby(config.TARGET)[c]
+                rows.append({
+                    "feature": c,
+                    "mean_no_pi": grp.mean().get(0, np.nan),
+                    "mean_pi": grp.mean().get(1, np.nan),
+                    "delta": grp.mean().get(1, np.nan) - grp.mean().get(0, np.nan),
+                })
+            comp = pd.DataFrame(rows).sort_values("delta", key=abs, ascending=False)
+            st.dataframe(comp, use_container_width=True)
+
+    if "Outlier Detection (IQR method)" in analysis_methods:
+        st.markdown("**Outlier counts (values outside 1.5 × IQR)**")
+        num_cols = df_live.select_dtypes(include=[np.number]).columns
+        rows = []
+        for c in num_cols:
+            q1, q3 = df_live[c].quantile(0.25), df_live[c].quantile(0.75)
+            iqr = q3 - q1
+            low, high = q1 - 1.5 * iqr, q3 + 1.5 * iqr
+            n_out = ((df_live[c] < low) | (df_live[c] > high)).sum()
+            rows.append({"feature": c, "lower_bound": low, "upper_bound": high,
+                         "outlier_count": int(n_out)})
+        st.dataframe(pd.DataFrame(rows).sort_values("outlier_count", ascending=False),
+                     use_container_width=True)
+
+    if "Missingness Profile" in analysis_methods:
+        st.markdown("**Missing value percentages**")
+        miss = (df_live.isna().mean() * 100).sort_values(ascending=False)
+        miss = miss[miss > 0]
+        st.bar_chart(miss)
+
+    if "Class Prevalence Summary" in analysis_methods:
+        st.markdown("**Outcome class prevalence**")
+        if config.TARGET in df_live.columns:
+            counts = df_live[config.TARGET].value_counts().rename(
+                {0: "No PI", 1: "PI"})
+            st.dataframe(counts, use_container_width=True)
+            st.write(f"Prevalence: {df_live[config.TARGET].mean():.2%}")
