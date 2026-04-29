@@ -1,0 +1,104 @@
+[
+  {
+    "feature": "hadm_id",
+    "mean_no_pi": 24999295.626943238,
+    "mean_pi": 25060046.897470996,
+    "delta": 60751.270527757704
+  },
+  {
+    "feature": "subject_id",
+    "mean_no_pi": 15012061.437484689,
+    "mean_pi": 14980735.424651284,
+    "delta": -31326.012833405286
+  },
+  {
+    "feature": "platelet_count",
+    "mean_no_pi": 205.21935576105338,
+    "mean_pi": 217.20500338066262,
+    "delta": 11.985647619609239
+  },
+  {
+    "feature": "age",
+    "mean_no_pi": 56.61485888076942,
+    "mean_pi": 66.43488463042628,
+    "delta": 9.820025749656864
+  },
+  {
+    "feature": "los_days",
+    "mean_no_pi": 4.597454891457053,
+    "mean_pi": 10.444487943408797,
+    "delta": 5.847033051951744
+  },
+  {
+    "feature": "hemoglobin",
+    "mean_no_pi": 10.511151899013745,
+    "mean_pi": 9.135079526226734,
+    "delta": -1.3760723727870108
+  },
+  {
+    "feature": "braden_friction_shear",
+    "mean_no_pi": 1.9327518939971924,
+    "mean_pi": 1.218837857246399,
+    "delta": -0.7139140367507935
+  },
+  {
+    "feature": "braden_sensory_perception",
+    "mean_no_pi": 2.5530471801757812,
+    "mean_pi": 1.9351136684417725,
+    "delta": -0.6179335117340088
+  },
+  {
+    "feature": "albumin",
+    "mean_no_pi": 3.3368603600808147,
+    "mean_pi": 2.755334805003679,
+    "delta": -0.5815255550771354
+  },
+  {
+    "feature": "braden_moisture",
+    "mean_no_pi": 3.089529514312744,
+    "mean_pi": 2.5276474952697754,
+    "delta": -0.5618820190429688
+  },
+  {
+    "feature": "braden_mobility",
+    "mean_no_pi": 2.2371363639831543,
+    "mean_pi": 1.6884516477584839,
+    "delta": -0.5486847162246704
+  },
+  {
+    "feature": "braden_nutrition",
+    "mean_no_pi": 1.9399163722991943,
+    "mean_pi": 1.5364253520965576,
+    "delta": -0.4034910202026367
+  },
+  {
+    "feature": "creatinine",
+    "mean_no_pi": 1.067421007472738,
+    "mean_pi": 1.2961164397343885,
+    "delta": 0.22869543226165057
+  },
+  {
+    "feature": "braden_activity",
+    "mean_no_pi": 1.2020673751831055,
+    "mean_pi": 1.0412371158599854,
+    "delta": -0.16083025932312012
+  },
+  {
+    "feature": "white_blood_cells",
+    "mean_no_pi": 7.208475352528173,
+    "mean_pi": 7.074522133477731,
+    "delta": -0.13395321905044177
+  },
+  {
+    "feature": "icu_flag",
+    "mean_no_pi": 0.15254594995910953,
+    "mean_pi": 0.279494198931039,
+    "delta": 0.12694824897192947
+  },
+  {
+    "feature": "hospital_expire_flag",
+    "mean_no_pi": 0.02046030986308288,
+    "mean_pi": 0.06146525876678399,
+    "delta": 0.04100494890370111
+  }
+]

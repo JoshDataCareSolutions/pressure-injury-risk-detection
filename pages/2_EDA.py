@@ -109,26 +109,60 @@ analysis_methods = st.multiselect(
     ],
 )
 
-if analysis_methods and has_live:
-    df_live = pd.read_parquet(config.ANALYTIC_DATASET)
+if analysis_methods:
+    import json
+
+    df_live = pd.read_parquet(config.ANALYTIC_DATASET) if has_live else None
+    summary = None
+    summary_path = display_dir / "summary.json"
+    if summary_path.exists():
+        with open(summary_path) as f:
+            summary = json.load(f)
+
+    def _load_json(filename):
+        path = display_dir / filename
+        if path.exists():
+            with open(path) as f:
+                return json.load(f)
+        return None
 
     if "Descriptive Statistics" in analysis_methods:
         st.markdown("**Descriptive Statistics**")
-        st.dataframe(df_live.describe().T, use_container_width=True)
+        if df_live is not None:
+            st.dataframe(df_live.describe().T, use_container_width=True)
+        else:
+            data = _load_json("analysis_describe.json")
+            if data:
+                st.dataframe(pd.DataFrame(data), use_container_width=True)
+            else:
+                st.info("Descriptive statistics artifact not available.")
 
     if "Pearson Correlation Matrix" in analysis_methods:
         st.markdown("**Pearson Correlation (numeric features only)**")
-        num_df = df_live.select_dtypes(include=[np.number])
-        corr = num_df.corr(method="pearson")
-        st.plotly_chart(
-            px.imshow(corr, color_continuous_scale="RdBu_r", aspect="auto",
-                      title="Pearson Correlation"),
-            use_container_width=True,
-        )
+        if df_live is not None:
+            num_df = df_live.select_dtypes(include=[np.number])
+            corr = num_df.corr(method="pearson")
+            st.plotly_chart(
+                px.imshow(corr, color_continuous_scale="RdBu_r", aspect="auto",
+                          title="Pearson Correlation"),
+                use_container_width=True,
+            )
+        else:
+            data = _load_json("analysis_correlation.json")
+            if data:
+                corr = pd.DataFrame(data["matrix"], index=data["features"],
+                                    columns=data["features"])
+                st.plotly_chart(
+                    px.imshow(corr, color_continuous_scale="RdBu_r", aspect="auto",
+                              title="Pearson Correlation"),
+                    use_container_width=True,
+                )
+            else:
+                st.info("Correlation artifact not available.")
 
     if "Group Comparison by Outcome (t-test summary)" in analysis_methods:
         st.markdown("**Mean comparison: PI vs no-PI cohorts**")
-        if config.TARGET in df_live.columns:
+        if df_live is not None and config.TARGET in df_live.columns:
             num_cols = df_live.select_dtypes(include=[np.number]).columns
             num_cols = [c for c in num_cols if c != config.TARGET]
             rows = []
@@ -142,31 +176,58 @@ if analysis_methods and has_live:
                 })
             comp = pd.DataFrame(rows).sort_values("delta", key=abs, ascending=False)
             st.dataframe(comp, use_container_width=True)
+        else:
+            data = _load_json("analysis_group_compare.json")
+            if data:
+                st.dataframe(pd.DataFrame(data), use_container_width=True)
+            else:
+                st.info("Group-comparison artifact not available.")
 
     if "Outlier Detection (IQR method)" in analysis_methods:
         st.markdown("**Outlier counts (values outside 1.5 × IQR)**")
-        num_cols = df_live.select_dtypes(include=[np.number]).columns
-        rows = []
-        for c in num_cols:
-            q1, q3 = df_live[c].quantile(0.25), df_live[c].quantile(0.75)
-            iqr = q3 - q1
-            low, high = q1 - 1.5 * iqr, q3 + 1.5 * iqr
-            n_out = ((df_live[c] < low) | (df_live[c] > high)).sum()
-            rows.append({"feature": c, "lower_bound": low, "upper_bound": high,
-                         "outlier_count": int(n_out)})
-        st.dataframe(pd.DataFrame(rows).sort_values("outlier_count", ascending=False),
-                     use_container_width=True)
+        if df_live is not None:
+            num_cols = df_live.select_dtypes(include=[np.number]).columns
+            rows = []
+            for c in num_cols:
+                q1, q3 = df_live[c].quantile(0.25), df_live[c].quantile(0.75)
+                iqr = q3 - q1
+                low, high = q1 - 1.5 * iqr, q3 + 1.5 * iqr
+                n_out = ((df_live[c] < low) | (df_live[c] > high)).sum()
+                rows.append({"feature": c, "lower_bound": low, "upper_bound": high,
+                             "outlier_count": int(n_out)})
+            st.dataframe(pd.DataFrame(rows).sort_values("outlier_count", ascending=False),
+                         use_container_width=True)
+        else:
+            data = _load_json("analysis_outliers.json")
+            if data:
+                st.dataframe(pd.DataFrame(data), use_container_width=True)
+            else:
+                st.info("Outlier artifact not available.")
 
     if "Missingness Profile" in analysis_methods:
         st.markdown("**Missing value percentages**")
-        miss = (df_live.isna().mean() * 100).sort_values(ascending=False)
-        miss = miss[miss > 0]
-        st.bar_chart(miss)
+        if df_live is not None:
+            miss = (df_live.isna().mean() * 100).sort_values(ascending=False)
+            miss = miss[miss > 0]
+            st.bar_chart(miss)
+        elif summary and summary.get("missing_pct"):
+            miss = pd.Series(summary["missing_pct"]).sort_values(ascending=False)
+            st.bar_chart(miss)
+        else:
+            st.info("Missingness artifact not available.")
 
     if "Class Prevalence Summary" in analysis_methods:
         st.markdown("**Outcome class prevalence**")
-        if config.TARGET in df_live.columns:
+        if df_live is not None and config.TARGET in df_live.columns:
             counts = df_live[config.TARGET].value_counts().rename(
                 {0: "No PI", 1: "PI"})
             st.dataframe(counts, use_container_width=True)
             st.write(f"Prevalence: {df_live[config.TARGET].mean():.2%}")
+        elif summary:
+            total = summary.get("total_admissions", 0)
+            pi = summary.get("pi_cases", 0)
+            counts = pd.Series({"No PI": total - pi, "PI": pi})
+            st.dataframe(counts, use_container_width=True)
+            st.write(f"Prevalence: {summary.get('pi_prevalence', 0):.2%}")
+        else:
+            st.info("Prevalence artifact not available.")
